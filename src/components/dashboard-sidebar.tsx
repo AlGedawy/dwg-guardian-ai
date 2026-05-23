@@ -23,14 +23,16 @@ import {
   Scale, 
   Activity,
   Cpu,
-  Database
+  Database,
+  Crosshair
 } from "lucide-react"
 import Link from "next/link"
 
 const navItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/dashboard" },
   { title: "Upload Workspace", icon: Database, url: "/dashboard/audit" },
-  { title: "Analysis Engine", icon: ShieldCheck, url: "/dashboard/remediation" },
+  { title: "Analysis Workstation", icon: Crosshair, url: "/dashboard/analysis-dashboard" },
+  { title: "Remediation Engine", icon: Zap, url: "/dashboard/remediation" },
   { title: "Project Vault", icon: Library, url: "/dashboard/projects" },
   { title: "QA Reports", icon: FileText, url: "/dashboard/reports" },
 ]
