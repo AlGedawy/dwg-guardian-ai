@@ -22,19 +22,24 @@ export function HealthScore({ score, className }: HealthScoreProps) {
   }
 
   return (
-    <Card className={cn("bg-card/30 border-primary/20", className)}>
+    <Card className={cn("bg-card/30 border-primary/20 h-full", className)}>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-code uppercase tracking-widest text-muted-foreground">Drawing Health</CardTitle>
-        <CardDescription>Aggregate compliance score</CardDescription>
+        <CardTitle className="text-xs font-code uppercase tracking-widest text-muted-foreground flex justify-between">
+          Drawing Health
+          <span className={cn("font-bold", score >= 70 ? "text-primary" : "text-destructive")}>
+            {score >= 90 ? "OPTIMAL" : score >= 70 ? "WARNING" : "CRITICAL"}
+          </span>
+        </CardTitle>
+        <CardDescription className="text-[10px]">Aggregated QA Compliance Index</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center pt-4">
-        <div className="relative size-48">
+      <CardContent className="flex flex-col items-center justify-center pt-2">
+        <div className="relative size-40">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={data}
-                innerRadius={65}
-                outerRadius={80}
+                innerRadius={55}
+                outerRadius={65}
                 paddingAngle={0}
                 dataKey="value"
                 startAngle={225}
@@ -42,25 +47,23 @@ export function HealthScore({ score, className }: HealthScoreProps) {
                 stroke="none"
               >
                 <Cell fill={getColor(score)} />
-                <Cell fill="hsl(var(--muted)/0.2)" />
+                <Cell fill="hsl(var(--muted)/0.1)" />
               </Pie>
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-5xl font-headline font-bold">{score}</span>
-            <span className="text-xs font-code text-muted-foreground">Compliance index</span>
+            <span className="text-4xl font-headline font-bold">{score}</span>
+            <span className="text-[10px] font-code text-muted-foreground uppercase opacity-60">Percentile</span>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-4 w-full">
-          <div className="p-3 rounded-md bg-muted/20 border border-border/50 text-center">
-            <div className="text-xs text-muted-foreground font-code mb-1">Status</div>
-            <div className={cn("font-medium", score >= 70 ? "text-primary" : "text-destructive")}>
-              {score >= 90 ? "Optimal" : score >= 70 ? "Warning" : "Critical"}
-            </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 w-full text-[10px] font-code">
+          <div className="p-2 rounded bg-muted/20 border border-border/50">
+            <div className="text-muted-foreground mb-1 uppercase">Readiness</div>
+            <div className="text-primary font-bold">READY</div>
           </div>
-          <div className="p-3 rounded-md bg-muted/20 border border-border/50 text-center">
-            <div className="text-xs text-muted-foreground font-code mb-1">Files</div>
-            <div className="font-medium">1.2 GB</div>
+          <div className="p-2 rounded bg-muted/20 border border-border/50">
+            <div className="text-muted-foreground mb-1 uppercase">Integrity</div>
+            <div className="text-foreground font-bold">94.2%</div>
           </div>
         </div>
       </CardContent>
