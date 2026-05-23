@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ShieldCheck, Lock, Globe, Key, ArrowRight, Building2, Cpu, Rocket, Monitor } from "lucide-react"
+import { ShieldCheck, Lock, Globe, Key, ArrowRight, Building2, Cpu, Rocket, Monitor, CheckCircle2 } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
