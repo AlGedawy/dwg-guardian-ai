@@ -24,7 +24,8 @@ import {
   Activity,
   Cpu,
   Database,
-  Crosshair
+  Crosshair,
+  FileSearch
 } from "lucide-react"
 import Link from "next/link"
 
@@ -34,7 +35,8 @@ const navItems = [
   { title: "Analysis Workstation", icon: Crosshair, url: "/dashboard/analysis-dashboard" },
   { title: "Remediation Engine", icon: Zap, url: "/dashboard/remediation" },
   { title: "Project Vault", icon: Library, url: "/dashboard/projects" },
-  { title: "QA Reports", icon: FileText, url: "/dashboard/reports" },
+  { title: "Report Viewer", icon: FileSearch, url: "/dashboard/qa-report-viewer" },
+  { title: "Executive Summaries", icon: FileText, url: "/dashboard/reports" },
 ]
 
 const systemItems = [
