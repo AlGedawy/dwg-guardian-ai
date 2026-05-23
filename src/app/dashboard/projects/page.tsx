@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { FolderPlus, Search, FileCode, Clock, MoreVertical, Download, ShieldCheck, Activity, Database, Library } from "lucide-react"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 export default function ProjectsPage() {
   const projects = [
