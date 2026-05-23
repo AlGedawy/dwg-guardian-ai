@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Download, Share2, ShieldCheck, Microscope, Layers, Ruler, Database, PieChart as PieChartIcon, Printer, ChevronRight } from "lucide-react"
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
+import { cn } from "@/lib/utils"
 
 export default function ReportsPage() {
   const complianceData = [
