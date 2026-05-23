@@ -5,7 +5,7 @@ import {
   Cpu, Network, Server, Microscope, 
   Terminal, History, LayoutDashboard, ChevronRight, Upload,
   FileCode, CheckCircle2, Globe, Lock, FileText, BarChart3,
-  Building2, Search, Ruler, Box, MicroscopeIcon
+  Building2, Search, Ruler, Box
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { HealthScore } from "@/components/cad/health-score"

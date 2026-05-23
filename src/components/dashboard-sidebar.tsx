@@ -35,19 +35,19 @@ import { Badge } from "@/components/ui/badge"
 
 const navItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/dashboard" },
-  { title: "Upload Workspace", icon: Database, url: "/dashboard/audit" },
+  { title: "Upload Workspace", icon: Database, url: "/dashboard/upload-workspace" },
   { title: "Analysis Workstation", icon: Crosshair, url: "/dashboard/analysis-dashboard" },
   { title: "Remediation Engine", icon: Zap, url: "/dashboard/remediation" },
-  { title: "Project Vault", icon: Library, url: "/dashboard/projects" },
+  { title: "Project Vault", icon: Library, url: "/dashboard/project-vault" },
   { title: "Report Viewer", icon: FileSearch, url: "/dashboard/qa-report-viewer" },
   { title: "Executive Summaries", icon: FileText, url: "/dashboard/reports" },
 ]
 
 const systemItems = [
-  { title: "Compliance Center", icon: Scale, url: "/dashboard/compliance" },
-  { title: "Team Activity", icon: Users, url: "/dashboard/team" },
-  { title: "Audit History", icon: History, url: "/dashboard/history" },
-  { title: "System Status", icon: Activity, url: "/dashboard/status" },
+  { title: "Compliance Center", icon: Scale, url: "/dashboard/compliance-center" },
+  { title: "Team Activity", icon: Users, url: "/dashboard/team-activity" },
+  { title: "Audit History", icon: History, url: "/dashboard/audit-history" },
+  { title: "System Status", icon: Activity, url: "/dashboard/system-status" },
 ]
 
 const enterpriseItems = [
