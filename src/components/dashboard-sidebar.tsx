@@ -1,3 +1,5 @@
+"use client"
+
 import {
   Sidebar,
   SidebarContent,
@@ -13,21 +15,20 @@ import {
 } from "@/components/ui/sidebar"
 import { 
   LayoutDashboard, 
-  ShieldCheck, 
   Zap, 
   Library, 
-  FileText, 
   Settings, 
   History, 
   Users, 
   Scale, 
   Activity,
-  Cpu,
   Database,
   Crosshair,
-  FileSearch
+  FileSearch,
+  FileText
 } from "lucide-react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 const navItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/dashboard" },
@@ -47,6 +48,8 @@ const systemItems = [
 ]
 
 export function DashboardSidebar() {
+  const pathname = usePathname()
+
   return (
     <Sidebar variant="inset" collapsible="icon" className="border-r border-border/50 bg-sidebar">
       <SidebarHeader className="h-14 flex items-center justify-center border-b border-border/50">
@@ -71,7 +74,12 @@ export function DashboardSidebar() {
             <SidebarMenu>
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title} className="hover:bg-primary/10 hover:text-primary transition-colors">
+                  <SidebarMenuButton 
+                    asChild 
+                    tooltip={item.title} 
+                    isActive={pathname === item.url}
+                    className="hover:bg-primary/10 hover:text-primary transition-colors data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
+                  >
                     <Link href={item.url}>
                       <item.icon className="size-4" />
                       <span className="font-code text-xs uppercase tracking-tight">{item.title}</span>
@@ -89,7 +97,12 @@ export function DashboardSidebar() {
             <SidebarMenu>
               {systemItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title} className="hover:bg-primary/10 hover:text-primary transition-colors">
+                  <SidebarMenuButton 
+                    asChild 
+                    tooltip={item.title} 
+                    isActive={pathname === item.url}
+                    className="hover:bg-primary/10 hover:text-primary transition-colors data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
+                  >
                     <Link href={item.url}>
                       <item.icon className="size-4" />
                       <span className="font-code text-xs uppercase tracking-tight">{item.title}</span>

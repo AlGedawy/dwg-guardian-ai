@@ -28,7 +28,7 @@ export default function DashboardLayout({
               <div className="flex flex-col">
                 <span className="text-[10px] font-code text-muted-foreground uppercase leading-none mb-1">Node Latency</span>
                 <span className="text-xs font-bold font-code uppercase tracking-tight flex items-center gap-2 text-green-500">
-                  <SignalHigh className="size-3" /> 14ms
+                  <SignalHigh className="size-3 animate-pulse" /> 14ms
                 </span>
               </div>
             </div>
@@ -63,7 +63,7 @@ export default function DashboardLayout({
             <span>Security Protocol: AES-256-GCM</span>
           </div>
           <div className="flex gap-4">
-            <span className="flex items-center gap-1"><Activity className="size-2" /> Engine: Nominal</span>
+            <span className="flex items-center gap-1"><Activity className="size-2 text-primary" /> Engine: Nominal</span>
             <span className="flex items-center gap-1"><Cpu className="size-2" /> Load: 12.4%</span>
           </div>
         </footer>
