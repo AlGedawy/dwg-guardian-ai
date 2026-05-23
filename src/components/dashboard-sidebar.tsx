@@ -25,10 +25,13 @@ import {
   Database,
   Crosshair,
   FileSearch,
-  FileText
+  FileText,
+  CreditCard,
+  ShieldAlert
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { Badge } from "@/components/ui/badge"
 
 const navItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/dashboard" },
@@ -47,6 +50,11 @@ const systemItems = [
   { title: "System Status", icon: Activity, url: "/dashboard/status" },
 ]
 
+const enterpriseItems = [
+  { title: "Billing & Usage", icon: CreditCard, url: "/pricing" },
+  { title: "Security Hub", icon: ShieldAlert, url: "/dashboard/settings" },
+]
+
 export function DashboardSidebar() {
   const pathname = usePathname()
 
@@ -58,9 +66,12 @@ export function DashboardSidebar() {
             DG
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="font-headline font-bold text-sm tracking-tight uppercase leading-none">
-              Guardian AI
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-headline font-bold text-sm tracking-tight uppercase leading-none">
+                Guardian AI
+              </span>
+              <Badge className="h-3.5 px-1 bg-primary/20 text-primary border-primary/20 text-[7px] font-code uppercase">PRO</Badge>
+            </div>
             <span className="text-[9px] font-code text-muted-foreground uppercase tracking-widest mt-1">
               Engineering OS
             </span>
@@ -113,6 +124,29 @@ export function DashboardSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="px-4 text-[10px] font-code uppercase tracking-widest text-muted-foreground/50">Enterprise</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {enterpriseItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild 
+                    tooltip={item.title} 
+                    isActive={pathname === item.url}
+                    className="hover:bg-primary/10 hover:text-primary transition-colors data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
+                  >
+                    <Link href={item.url}>
+                      <item.icon className="size-4" />
+                      <span className="font-code text-xs uppercase tracking-tight">{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4 border-t border-border/50 bg-muted/5">
         <SidebarMenu>
@@ -120,7 +154,7 @@ export function DashboardSidebar() {
             <SidebarMenuButton asChild className="hover:bg-primary/10">
               <Link href="/dashboard/settings">
                 <Settings className="size-4" />
-                <span className="font-code text-xs uppercase">Settings</span>
+                <span className="font-code text-xs uppercase">Workspace Settings</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
