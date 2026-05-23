@@ -11,11 +11,29 @@ export default function RemediationPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [suggestions, setSuggestions] = useState<SuggestCadRemediationsOutput | null>(null)
 
-  // Mock initial issues to show the remediation flow
+  // Initial issues based on user-provided findings
   const initialIssues = [
-    { id: "1", type: "duplicate_geometry" as const, description: "34 duplicate lines found on Layer 'A-WALL-EXTR'", severity: "high" as const, context: "Entities: 0x12, 0x14, 0x15..." },
-    { id: "2", type: "incorrect_layer" as const, description: "Door geometry found on 'A-FLOR-TEXT'", severity: "medium" as const, context: "Move to 'A-DOOR'" },
-    { id: "3", type: "scale_violation" as const, description: "Block 'Title_Block' inserted at scale 1:1 instead of 1:100", severity: "critical" as const }
+    { 
+      id: "1", 
+      type: "incorrect_layer" as const, 
+      description: "Layer A-WALL exists on wrong color index.", 
+      severity: "critical" as const, 
+      context: "Standard requires Color 7 (White/Black), but found Color 1 (Red) which impacts plotting weights." 
+    },
+    { 
+      id: "2", 
+      type: "duplicate_geometry" as const, 
+      description: "23 duplicate geometries detected.", 
+      severity: "high" as const, 
+      context: "Overlapping redundant entities found in the floor plan section." 
+    },
+    { 
+      id: "3", 
+      type: "scale_violation" as const, 
+      description: "Annotation scale mismatch in viewport 04.", 
+      severity: "low" as const,
+      context: "Inconsistent scaling between viewport (1:50) and annotation objects (1:100)."
+    }
   ]
 
   const runRemediation = async () => {
@@ -52,10 +70,13 @@ export default function RemediationPage() {
                 <div key={issue.id} className="p-4 rounded-lg bg-muted/20 border border-border/50 flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={issue.severity === "critical" ? "destructive" : "outline"} className="text-[10px] font-code h-4 px-1">{issue.severity}</Badge>
-                      <span className="text-xs font-code text-muted-foreground uppercase">{issue.type}</span>
+                      <Badge variant={issue.severity === "critical" ? "destructive" : issue.severity === "high" ? "destructive" : "outline"} className="text-[10px] font-code h-4 px-1">
+                        {issue.severity.toUpperCase()}
+                      </Badge>
+                      <span className="text-xs font-code text-muted-foreground uppercase">{issue.type.replace('_', ' ')}</span>
                     </div>
                     <p className="text-sm font-medium">{issue.description}</p>
+                    {issue.context && <p className="text-xs text-muted-foreground mt-1">{issue.context}</p>}
                   </div>
                 </div>
               ))}
