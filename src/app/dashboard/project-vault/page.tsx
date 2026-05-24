@@ -9,7 +9,7 @@ import { FolderPlus, Search, FileCode, Clock, MoreVertical, Download, ShieldChec
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
-export default function ProjectsPage() {
+export default function ProjectVaultPage() {
   const projects = [
     { name: "Terminal 3 Expansion", files: 142, lastUpdated: "2h ago", status: "Active", health: 92, id: "PRJ_T3E", icon: Plane, type: "Aviation" },
     { name: "Downtown Office Hub", files: 48, lastUpdated: "Yesterday", status: "Review", health: 65, id: "PRJ_DOH", icon: Landmark, type: "Structural" },
