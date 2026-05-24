@@ -186,7 +186,7 @@ export default function ProjectsPage() {
             </Table>
             <div className="p-4 bg-muted/5 border-t border-white/10 text-center">
               <Button variant="ghost" className="text-[10px] font-code uppercase text-muted-foreground hover:text-primary gap-2">
-                Load Extended Archive Cluster (512+ Results) <ChevronRight className="size-3" />
+                Load Extended Archive Cluster (512+ Results)
               </Button>
             </div>
           </Card>
