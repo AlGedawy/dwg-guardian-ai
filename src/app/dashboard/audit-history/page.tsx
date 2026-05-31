@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { History, Search, FileText, AlertTriangle, AlertCircle, Clock, ExternalLink, Trash2 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { deleteAuditSession, listAuditSessions, type StoredAuditSession } from "@/lib/audit-session"
+import { getAudits, removeAudit } from "@/lib/audits/repository"
+import type { StoredAuditSession } from "@/lib/audit-session"
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -21,9 +22,16 @@ export default function AuditHistoryPage() {
   const router = useRouter()
   const [sessions, setSessions] = useState<StoredAuditSession[]>([])
   const [query, setQuery] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+
+  const loadSessions = async () => {
+    setIsLoading(true)
+    setSessions(await getAudits())
+    setIsLoading(false)
+  }
 
   useEffect(() => {
-    setSessions(listAuditSessions())
+    void loadSessions()
   }, [])
 
   const filteredSessions = useMemo(() => {
@@ -36,9 +44,9 @@ export default function AuditHistoryPage() {
     )
   }, [query, sessions])
 
-  const removeSession = (id: string) => {
-    deleteAuditSession(id)
-    setSessions(listAuditSessions())
+  const removeSession = async (id: string) => {
+    await removeAudit(id)
+    await loadSessions()
   }
 
   return (
@@ -47,10 +55,10 @@ export default function AuditHistoryPage() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <History className="size-5 text-primary" />
-            <Badge variant="outline" className="font-code text-[10px] border-primary/20 text-primary uppercase">Persistent Local Registry</Badge>
+            <Badge variant="outline" className="font-code text-[10px] border-primary/20 text-primary uppercase">Audit Registry</Badge>
           </div>
           <h1 className="text-4xl font-headline font-bold uppercase tracking-tight">Audit Session History</h1>
-          <p className="text-muted-foreground font-body">Stored audit sessions generated from uploaded drawings on this browser.</p>
+          <p className="text-muted-foreground font-body">Stored audit sessions generated from uploaded drawings.</p>
         </div>
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
@@ -107,31 +115,13 @@ export default function AuditHistoryPage() {
                   </TableCell>
                   <TableCell className="text-right pr-6">
                     <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:text-primary"
-                        onClick={() => router.push(`/dashboard/audit-results?id=${encodeURIComponent(session.id)}`)}
-                        aria-label="Open audit result"
-                      >
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => router.push(`/dashboard/audit-results?id=${encodeURIComponent(session.id)}`)} aria-label="Open audit result">
                         <ExternalLink className="size-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:text-primary"
-                        onClick={() => router.push(`/dashboard/audit-results?id=${encodeURIComponent(session.id)}`)}
-                        aria-label="Open audit report"
-                      >
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => router.push(`/dashboard/audit-results?id=${encodeURIComponent(session.id)}`)} aria-label="Open audit report">
                         <FileText className="size-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:text-destructive"
-                        onClick={() => removeSession(session.id)}
-                        aria-label="Delete audit result"
-                      >
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={() => void removeSession(session.id)} aria-label="Delete audit result">
                         <Trash2 className="size-4" />
                       </Button>
                     </div>
@@ -139,11 +129,16 @@ export default function AuditHistoryPage() {
                 </TableRow>
               )
             })}
-            {filteredSessions.length === 0 && (
+            {!isLoading && filteredSessions.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="py-16 text-center text-sm text-muted-foreground">
                   No stored audit sessions found. Upload a drawing to generate the first result.
                 </TableCell>
+              </TableRow>
+            )}
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={5} className="py-16 text-center text-sm text-muted-foreground">Loading audit registry...</TableCell>
               </TableRow>
             )}
           </TableBody>
