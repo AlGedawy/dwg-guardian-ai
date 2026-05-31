@@ -1,11 +1,27 @@
 import type { AuditCadFileOutput } from "@/ai/flows/audit-cad-file"
 import { deleteAuditSession, listAuditSessions, persistAuditSession, readAuditSession, type StoredAuditSession, updateAuditSessionStoragePath } from "@/lib/audit-session"
 import { deleteAuditFromCloud, listCloudAudits, readAuditFromCloud, saveAuditToCloud } from "@/lib/firebase/audit-repository"
+import { storeDrawing } from "@/lib/firebase/storage"
 
-export async function saveAudit(fileName: string, output: AuditCadFileOutput) {
+export async function saveAudit(fileName: string, output: AuditCadFileOutput, file?: File) {
   const session = persistAuditSession(fileName, output)
   if (!session) return null
-  try { await saveAuditToCloud(session) } catch (error) { console.warn("Cloud audit sync skipped", error) }
+
+  try {
+    await saveAuditToCloud(session)
+  } catch (error) {
+    console.warn("Cloud audit sync skipped", error)
+  }
+
+  if (file) {
+    try {
+      const storagePath = await storeDrawing(session.id, file)
+      if (storagePath) return await attachStoragePath(session.id, storagePath)
+    } catch (error) {
+      console.warn("Cloud drawing upload skipped", error)
+    }
+  }
+
   return session
 }
 
