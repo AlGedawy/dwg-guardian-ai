@@ -1,12 +1,13 @@
 'use server';
 /**
- * @fileOverview An AI auditor for CAD files (DWG, DXF, PDF) that analyzes them against engineering standards
- * and provides a detailed list of detected issues like incorrect layers, text inconsistencies, and plotting risks.
+ * @fileOverview Drawing audit entry point. ASCII DXF files are reviewed with deterministic rules.
+ * DWG and PDF files currently use the AI fallback until dedicated parsers are added.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { validateDrawingDataUri } from '@/lib/files/validation';
+import { auditAsciiDxf } from '@/lib/cad/dxf-auditor';
+import { getFileExtension, validateDrawingDataUri } from '@/lib/files/validation';
 
 const AuditCadFileInputSchema = z.object({
   fileDataUri: z
@@ -47,6 +48,10 @@ export async function auditCadFile(input: AuditCadFileInput): Promise<AuditCadFi
     throw new Error(validation.error);
   }
 
+  if (getFileExtension(parsed.fileName) === '.dxf') {
+    return auditAsciiDxf(parsed.fileDataUri);
+  }
+
   return auditCadFileFlow(parsed);
 }
 
@@ -54,7 +59,7 @@ const auditCadFilePrompt = ai.definePrompt({
   name: 'auditCadFilePrompt',
   input: { schema: AuditCadFileInputSchema },
   output: { schema: AuditCadFileOutputSchema },
-  prompt: `You are an expert CAD auditor AI. Your task is to analyze the provided CAD file (DWG, DXF, or PDF) against common engineering drafting standards and best practices.
+  prompt: `You are an expert CAD auditor AI. Your task is to analyze the provided CAD file against common engineering drafting standards and best practices.
 
 Carefully examine the file for the following types of issues:
 - **Incorrect Layers**: Layers not conforming to standard naming conventions, incorrect layer usage for specific entities, or unnecessary layers.
@@ -63,7 +68,7 @@ Carefully examine the file for the following types of issues:
 - **Plotting Risks**: Elements that might cause issues during plotting, such as objects far from origin, unpurgeable items, or inconsistent paper space layouts.
 - **Scale Problems**: Inconsistent scaling, incorrect units, or objects drawn at non-standard scales.
 
-Based on your analysis of the file named "{{{fileName}}}", provide a detailed list of all detected issues. For each issue, identify its category, provide a clear and concise description, assign a severity level, and if possible, offer a suggested remediation.
+Based on your analysis of the file named "{{{fileName}}}", provide a detailed list of detected issues. For each issue, identify its category, provide a concise description, assign a severity level, and offer a suggested remediation when possible.
 
 File Name: {{{fileName}}}
 File Content: {{media url=fileDataUri}}
