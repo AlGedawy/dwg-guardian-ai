@@ -2,14 +2,11 @@
 /**
  * @fileOverview An AI auditor for CAD files (DWG, DXF, PDF) that analyzes them against engineering standards
  * and provides a detailed list of detected issues like incorrect layers, text inconsistencies, and plotting risks.
- *
- * - auditCadFile - A function that handles the CAD file auditing process.
- * - AuditCadFileInput - The input type for the auditCadFile function.
- * - AuditCadFileOutput - The return type for the auditCadFile function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { validateDrawingDataUri } from '@/lib/files/validation';
 
 const AuditCadFileInputSchema = z.object({
   fileDataUri: z
@@ -17,7 +14,7 @@ const AuditCadFileInputSchema = z.object({
     .describe(
       "The CAD file content (DWG, DXF, or PDF) as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
-  fileName: z.string().describe("The original name of the CAD file, e.g., 'drawing.dwg'."),
+  fileName: z.string().min(1).max(255).describe("The original name of the CAD file, e.g., 'drawing.dwg'."),
 });
 export type AuditCadFileInput = z.infer<typeof AuditCadFileInputSchema>;
 
@@ -43,7 +40,14 @@ const AuditCadFileOutputSchema = z.object({
 export type AuditCadFileOutput = z.infer<typeof AuditCadFileOutputSchema>;
 
 export async function auditCadFile(input: AuditCadFileInput): Promise<AuditCadFileOutput> {
-  return auditCadFileFlow(input);
+  const parsed = AuditCadFileInputSchema.parse(input);
+  const validation = validateDrawingDataUri(parsed.fileName, parsed.fileDataUri);
+
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  return auditCadFileFlow(parsed);
 }
 
 const auditCadFilePrompt = ai.definePrompt({
@@ -75,6 +79,7 @@ const auditCadFileFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await auditCadFilePrompt(input);
-    return output!;
+    if (!output) throw new Error('The audit engine returned an empty response.');
+    return output;
   }
 );
