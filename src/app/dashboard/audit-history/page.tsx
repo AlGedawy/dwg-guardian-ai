@@ -118,7 +118,7 @@ export default function AuditHistoryPage() {
                       <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => router.push(`/dashboard/audit-results?id=${encodeURIComponent(session.id)}`)} aria-label="Open audit result">
                         <ExternalLink className="size-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => router.push(`/dashboard/audit-results?id=${encodeURIComponent(session.id)}`)} aria-label="Open audit report">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => router.push(`/dashboard/qa-report-viewer?id=${encodeURIComponent(session.id)}`)} aria-label="Open audit report">
                         <FileText className="size-4" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={() => void removeSession(session.id)} aria-label="Delete audit result">
