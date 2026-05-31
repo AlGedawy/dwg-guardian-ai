@@ -1,6 +1,6 @@
 import type { AuditCadFileOutput } from "@/ai/flows/audit-cad-file"
-import { listAuditSessions, persistAuditSession, readAuditSession, type StoredAuditSession } from "@/lib/audit-session"
-import { listCloudAudits, readAuditFromCloud, saveAuditToCloud } from "@/lib/firebase/audit-repository"
+import { deleteAuditSession, listAuditSessions, persistAuditSession, readAuditSession, type StoredAuditSession } from "@/lib/audit-session"
+import { deleteAuditFromCloud, listCloudAudits, readAuditFromCloud, saveAuditToCloud } from "@/lib/firebase/audit-repository"
 
 export async function saveAudit(fileName: string, output: AuditCadFileOutput) {
   const session = persistAuditSession(fileName, output)
@@ -25,4 +25,9 @@ export async function getAudits(): Promise<StoredAuditSession[]> {
     if (cloudAudits.length > 0) return cloudAudits
   } catch (error) { console.warn("Cloud audit listing skipped", error) }
   return listAuditSessions()
+}
+
+export async function removeAudit(id: string) {
+  deleteAuditSession(id)
+  try { await deleteAuditFromCloud(id) } catch (error) { console.warn("Cloud audit deletion skipped", error) }
 }
