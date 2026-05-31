@@ -1,0 +1,1 @@
+# Write capability test
