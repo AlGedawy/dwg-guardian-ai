@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, FileType, Search, AlertCircle, AlertTriangle, Info, CheckCircle, FileText, Activity, ShieldCheck, Box, Microscope, Layers, Ruler, Database, Terminal } from "lucide-react"
-import { auditCadFile, type AuditCadFileOutput } from "@/ai/flows/audit-cad-file"
-import { persistAuditSession } from "@/lib/audit-session"
+import { Upload, FileType, Search, CheckCircle, FileText, Activity, ShieldCheck, Box, Microscope, Layers, Ruler, Database } from "lucide-react"
+import { auditCadFile } from "@/ai/flows/audit-cad-file"
+import { saveAudit } from "@/lib/audits/repository"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
@@ -16,8 +15,8 @@ type AuditState = "idle" | "uploading" | "processing" | "complete"
 export default function AuditPage() {
   const router = useRouter()
   const [state, setState] = useState<AuditState>("idle")
-  const [results, setResults] = useState<AuditCadFileOutput | null>(null)
   const [fileName, setFileName] = useState("")
+  const [auditId, setAuditId] = useState("")
   const [progress, setProgress] = useState(0)
   const [activeStep, setActiveStep] = useState(0)
 
@@ -43,12 +42,11 @@ export default function AuditPage() {
     reader.onload = async () => {
       setState("processing")
       const dataUri = reader.result as string
-      
-      // Simulated engineering processing sequence
+
       for (let i = 0; i < steps.length; i++) {
         setActiveStep(i)
         setProgress(15 + ((i + 1) * 14))
-        await new Promise(r => setTimeout(r, 600))
+        await new Promise(resolve => setTimeout(resolve, 600))
       }
 
       try {
@@ -56,16 +54,16 @@ export default function AuditPage() {
           fileDataUri: dataUri,
           fileName: file.name
         })
-        setResults(output)
-        persistAuditSession(file.name, output)
+        const session = await saveAudit(file.name, output)
+        if (!session) throw new Error("Audit result could not be saved")
+
+        setAuditId(session.id)
         setProgress(100)
         setState("complete")
-        
-        // Operational workflow: auto-route to live audit results after completion
-        setTimeout(() => {
-          router.push('/dashboard/audit-results')
-        }, 1200)
 
+        setTimeout(() => {
+          router.push(`/dashboard/audit-results?id=${encodeURIComponent(session.id)}`)
+        }, 1200)
       } catch (error) {
         console.error("Audit failed", error)
         setState("idle")
@@ -87,9 +85,9 @@ export default function AuditPage() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-8 space-y-6">
             <div className="relative group">
-              <input 
-                type="file" 
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+              <input
+                type="file"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 accept=".dwg,.dxf,.pdf"
                 onChange={handleFileUpload}
               />
@@ -134,8 +132,8 @@ export default function AuditPage() {
                   "Geometric Intersection Analysis",
                   "Line-weight Compliance (EN 1090)",
                   "Annotation Scale Verification"
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 text-xs text-foreground/80">
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center gap-3 text-xs text-foreground/80">
                     <CheckCircle className="size-3 text-primary" />
                     {item}
                   </div>
@@ -168,71 +166,67 @@ export default function AuditPage() {
     )
   }
 
-  if (state === "processing" || state === "uploading" || state === "complete") {
-    return (
-      <div className="p-8 max-w-4xl mx-auto space-y-12 h-[calc(100vh-100px)] flex flex-col justify-center">
-        <div className="space-y-4 text-center">
-          <div className={cn(
-            "inline-flex items-center justify-center size-16 rounded-full transition-all duration-500",
-            state === "complete" ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary animate-pulse"
-          )}>
-            {state === "complete" ? <CheckCircle className="size-8" /> : <Activity className="size-8" />}
+  return (
+    <div className="p-8 max-w-4xl mx-auto space-y-12 h-[calc(100vh-100px)] flex flex-col justify-center">
+      <div className="space-y-4 text-center">
+        <div className={cn(
+          "inline-flex items-center justify-center size-16 rounded-full transition-all duration-500",
+          state === "complete" ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary animate-pulse"
+        )}>
+          {state === "complete" ? <CheckCircle className="size-8" /> : <Activity className="size-8" />}
+        </div>
+        <h2 className="text-3xl font-headline font-bold uppercase tracking-tight">
+          {state === "complete" ? "Audit Finalized" : "Guardian Engine Processing"}
+        </h2>
+        <p className="text-muted-foreground font-code text-sm">ACTIVE_AUDIT_ID: {auditId || "INITIALIZING"}</p>
+      </div>
+
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs font-code text-muted-foreground uppercase">
+            <span>Overall Integrity Progress</span>
+            <span>{progress}%</span>
           </div>
-          <h2 className="text-3xl font-headline font-bold uppercase tracking-tight">
-            {state === "complete" ? "Audit Finalized" : "Guardian Engine Processing"}
-          </h2>
-          <p className="text-muted-foreground font-code text-sm">ACTIVE_AUDIT_ID: 0x7E3F21A</p>
+          <Progress value={progress} className="h-2" />
         </div>
 
-        <div className="space-y-8">
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs font-code text-muted-foreground uppercase">
-              <span>Overall Integrity Progress</span>
-              <span>{progress}%</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {steps.map((step, i) => (
-              <div key={i} className={cn(
-                "p-4 rounded-lg border transition-all duration-500 flex items-center gap-4",
-                i === activeStep ? "bg-primary/5 border-primary shadow-[0_0_15px_rgba(59,130,246,0.1)]" :
-                i < activeStep || state === "complete" ? "bg-muted/10 border-border/50 opacity-60" :
-                "bg-muted/5 border-border/20 opacity-30"
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {steps.map((step, index) => (
+            <div key={index} className={cn(
+              "p-4 rounded-lg border transition-all duration-500 flex items-center gap-4",
+              index === activeStep ? "bg-primary/5 border-primary shadow-[0_0_15px_rgba(59,130,246,0.1)]" :
+              index < activeStep || state === "complete" ? "bg-muted/10 border-border/50 opacity-60" :
+              "bg-muted/5 border-border/20 opacity-30"
+            )}>
+              <div className={cn(
+                "size-8 rounded flex items-center justify-center",
+                index === activeStep && state !== "complete" ? "bg-primary text-primary-foreground animate-pulse" :
+                index < activeStep || state === "complete" ? "bg-primary/20 text-primary" :
+                "bg-muted/50 text-muted-foreground"
               )}>
-                <div className={cn(
-                  "size-8 rounded flex items-center justify-center",
-                  i === activeStep && state !== "complete" ? "bg-primary text-primary-foreground animate-pulse" :
-                  i < activeStep || state === "complete" ? "bg-primary/20 text-primary" :
-                  "bg-muted/50 text-muted-foreground"
-                )}>
-                  {(i < activeStep || state === "complete") ? <CheckCircle className="size-4" /> : <step.icon className="size-4" />}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold uppercase tracking-widest">{step.label}</span>
-                  <span className="text-[9px] font-code text-muted-foreground">{step.code}</span>
-                </div>
+                {(index < activeStep || state === "complete") ? <CheckCircle className="size-4" /> : <step.icon className="size-4" />}
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-black/60 rounded-lg border border-border/50 p-6 font-code text-[11px] h-48 overflow-hidden relative">
-          <div className="space-y-1">
-            <p className="text-muted-foreground">[14:22:01] Ingestion started: {fileName}</p>
-            <p className="text-muted-foreground">[14:22:02] Geometric primitive count: 142,094</p>
-            <p className={cn("text-primary", activeStep >= 1 ? "opacity-100" : "opacity-0")}>[14:22:04] AIA Compliance Mapping initiated...</p>
-            <p className={cn("text-warning", activeStep >= 2 ? "opacity-100" : "opacity-0")}>[14:22:06] WARNING: Non-standard scale detected in Viewport 4</p>
-            <p className={cn("text-primary", activeStep >= 3 ? "opacity-100" : "opacity-0")}>[14:22:08] Annotation styles validated against ISO-13567</p>
-            <p className={cn("text-green-500", state === "complete" ? "opacity-100" : "opacity-0")}>[14:22:12] Report compilation successful. Finalizing telemetry...</p>
-            <p className={cn("text-primary font-bold", state === "complete" ? "opacity-100" : "opacity-0")}>[14:22:13] ROUTING TO ANALYSIS WORKSTATION...</p>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-widest">{step.label}</span>
+                <span className="text-[9px] font-code text-muted-foreground">{step.code}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    )
-  }
 
-  return null
+      <div className="bg-black/60 rounded-lg border border-border/50 p-6 font-code text-[11px] h-48 overflow-hidden relative">
+        <div className="space-y-1">
+          <p className="text-muted-foreground">[14:22:01] Ingestion started: {fileName}</p>
+          <p className="text-muted-foreground">[14:22:02] Geometric primitive count: 142,094</p>
+          <p className={cn("text-primary", activeStep >= 1 ? "opacity-100" : "opacity-0")}>[14:22:04] AIA Compliance Mapping initiated...</p>
+          <p className={cn("text-warning", activeStep >= 2 ? "opacity-100" : "opacity-0")}>[14:22:06] WARNING: Non-standard scale detected in Viewport 4</p>
+          <p className={cn("text-primary", activeStep >= 3 ? "opacity-100" : "opacity-0")}>[14:22:08] Annotation styles validated against ISO-13567</p>
+          <p className={cn("text-green-500", state === "complete" ? "opacity-100" : "opacity-0")}>[14:22:12] Report compilation successful. Finalizing telemetry...</p>
+          <p className={cn("text-primary font-bold", state === "complete" ? "opacity-100" : "opacity-0")}>[14:22:13] ROUTING TO LIVE AUDIT RESULT...</p>
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+      </div>
+    </div>
+  )
 }
