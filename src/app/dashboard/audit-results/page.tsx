@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { AlertCircle, AlertTriangle, CheckCircle2, FileText, RefreshCw, ShieldCheck } from "lucide-react"
+import { AlertCircle, AlertTriangle, CheckCircle2, FileText, History, RefreshCw, ShieldCheck } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,12 +20,17 @@ function severityClass(severity: string) {
   }
 }
 
+function readRequestedAuditId() {
+  if (typeof window === "undefined") return undefined
+  return new URLSearchParams(window.location.search).get("id") ?? undefined
+}
+
 export default function AuditResultsPage() {
   const router = useRouter()
   const [session, setSession] = useState<StoredAuditSession | null>(null)
 
   useEffect(() => {
-    setSession(readAuditSession())
+    setSession(readAuditSession(readRequestedAuditId()))
   }, [])
 
   const summary = useMemo(() => {
@@ -45,14 +50,19 @@ export default function AuditResultsPage() {
         <Card className="bg-card/40 border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg uppercase tracking-tight">
-              <AlertTriangle className="size-5 text-warning" /> No audit session found
+              <AlertTriangle className="size-5 text-warning" /> Audit result not found
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">Upload a drawing first to generate a live audit result.</p>
-            <Button onClick={() => router.push('/dashboard/upload-workspace')} className="gap-2">
-              <RefreshCw className="size-4" /> Start New Scan
-            </Button>
+            <p className="text-sm text-muted-foreground">Upload a drawing or select a stored audit from the history registry.</p>
+            <div className="flex gap-2">
+              <Button onClick={() => router.push('/dashboard/upload-workspace')} className="gap-2">
+                <RefreshCw className="size-4" /> Start New Scan
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/dashboard/audit-history')} className="gap-2">
+                <History className="size-4" /> Open Audit History
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -63,14 +73,18 @@ export default function AuditResultsPage() {
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
             <Badge variant="outline" className="font-code text-[10px] text-primary bg-primary/5">LIVE_AUDIT_RESULT</Badge>
             <Badge variant="outline" className="font-code text-[10px]">{session.fileName}</Badge>
+            <Badge variant="outline" className="font-code text-[10px]">{session.id}</Badge>
           </div>
           <h1 className="text-3xl font-headline font-bold uppercase tracking-tight">Audit Results</h1>
-          <p className="text-sm text-muted-foreground">Generated from the uploaded file during the current browser session.</p>
+          <p className="text-sm text-muted-foreground">Stored audit result generated from the uploaded drawing.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => router.push('/dashboard/audit-history')} className="gap-2">
+            <History className="size-4" /> Audit History
+          </Button>
           <Button variant="outline" onClick={() => router.push('/dashboard/upload-workspace')} className="gap-2">
             <RefreshCw className="size-4" /> New Scan
           </Button>
