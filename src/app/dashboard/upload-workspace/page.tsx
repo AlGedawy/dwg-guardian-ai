@@ -3,9 +3,10 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, FileType, Search, CheckCircle, FileText, Activity, ShieldCheck, Box, Microscope, Layers, Ruler, Database } from "lucide-react"
+import { Upload, FileType, Search, CheckCircle, FileText, Activity, ShieldCheck, Box, Microscope, Layers, Ruler, Database, AlertTriangle } from "lucide-react"
 import { auditCadFile } from "@/ai/flows/audit-cad-file"
 import { saveAudit } from "@/lib/audits/repository"
+import { validateDrawingFile } from "@/lib/files/validation"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
@@ -17,6 +18,7 @@ export default function AuditPage() {
   const [state, setState] = useState<AuditState>("idle")
   const [fileName, setFileName] = useState("")
   const [auditId, setAuditId] = useState("")
+  const [uploadError, setUploadError] = useState("")
   const [progress, setProgress] = useState(0)
   const [activeStep, setActiveStep] = useState(0)
 
@@ -29,23 +31,35 @@ export default function AuditPage() {
     { label: "QA GENERATION", icon: FileText, code: "RPT_V1" }
   ]
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (!file) return
 
+    const validation = validateDrawingFile(file)
+    if (!validation.valid) {
+      setUploadError(validation.error)
+      event.target.value = ""
+      return
+    }
+
+    setUploadError("")
     setFileName(file.name)
     setState("uploading")
     setProgress(10)
 
     const reader = new FileReader()
+    reader.onerror = () => {
+      setUploadError("The selected file could not be read.")
+      setState("idle")
+    }
     reader.readAsDataURL(file)
     reader.onload = async () => {
       setState("processing")
       const dataUri = reader.result as string
 
-      for (let i = 0; i < steps.length; i++) {
-        setActiveStep(i)
-        setProgress(15 + ((i + 1) * 14))
+      for (let index = 0; index < steps.length; index++) {
+        setActiveStep(index)
+        setProgress(15 + ((index + 1) * 14))
         await new Promise(resolve => setTimeout(resolve, 600))
       }
 
@@ -66,6 +80,7 @@ export default function AuditPage() {
         }, 1200)
       } catch (error) {
         console.error("Audit failed", error)
+        setUploadError(error instanceof Error ? error.message : "Audit processing failed.")
         setState("idle")
       }
     }
@@ -79,8 +94,15 @@ export default function AuditPage() {
             <Badge variant="outline" className="font-code text-[10px] text-primary bg-primary/5">INGESTION_MODULE_V4</Badge>
           </div>
           <h1 className="text-4xl font-headline font-bold uppercase tracking-tight">Upload Workspace</h1>
-          <p className="text-muted-foreground max-w-2xl font-body">Initiate high-precision geometric analysis. Supported technical formats: DWG, DXF, Vector PDF.</p>
+          <p className="text-muted-foreground max-w-2xl font-body">Initiate technical drawing analysis. Supported formats: DWG, DXF, and PDF. Maximum file size: 20 MB.</p>
         </div>
+
+        {uploadError && (
+          <div className="flex items-start gap-2 rounded border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
+            <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+            <span>{uploadError}</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-8 space-y-6">
@@ -97,7 +119,7 @@ export default function AuditPage() {
                 </div>
                 <div className="text-center space-y-2">
                   <p className="text-xl font-headline font-semibold">Drop Engineering Drawings</p>
-                  <p className="text-sm text-muted-foreground">Select local files or network assets for compliance verification</p>
+                  <p className="text-sm text-muted-foreground">Select a supported local drawing for audit processing</p>
                 </div>
               </div>
             </div>
@@ -105,15 +127,15 @@ export default function AuditPage() {
             <div className="grid grid-cols-3 gap-4">
               <Card className="bg-card/40 border-border/50 p-4 flex flex-col items-center gap-2">
                 <FileType className="size-6 text-muted-foreground" />
-                <span className="text-[10px] font-code font-bold uppercase">DWG Native</span>
+                <span className="text-[10px] font-code font-bold uppercase">DWG</span>
               </Card>
               <Card className="bg-card/40 border-border/50 p-4 flex flex-col items-center gap-2">
                 <Box className="size-6 text-muted-foreground" />
-                <span className="text-[10px] font-code font-bold uppercase">DXF Interchange</span>
+                <span className="text-[10px] font-code font-bold uppercase">DXF</span>
               </Card>
               <Card className="bg-card/40 border-border/50 p-4 flex flex-col items-center gap-2">
                 <FileText className="size-6 text-muted-foreground" />
-                <span className="text-[10px] font-code font-bold uppercase">Vector PDF</span>
+                <span className="text-[10px] font-code font-bold uppercase">PDF</span>
               </Card>
             </div>
           </div>
@@ -122,42 +144,22 @@ export default function AuditPage() {
             <Card className="bg-primary/5 border-primary/20">
               <CardHeader className="py-4">
                 <CardTitle className="text-xs font-code uppercase tracking-widest flex items-center gap-2">
-                  <ShieldCheck className="size-3 text-primary" /> Active Protocols
+                  <ShieldCheck className="size-3 text-primary" /> Audit Categories
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  "ISO 13567 Layering Standards",
-                  "AIA CAD Layer Guidelines v3",
-                  "Geometric Intersection Analysis",
-                  "Line-weight Compliance (EN 1090)",
-                  "Annotation Scale Verification"
+                  "Layer naming and usage",
+                  "Text and annotation consistency",
+                  "Scale review",
+                  "Plotting risk review",
+                  "General drawing quality"
                 ].map((item, index) => (
                   <div key={index} className="flex items-center gap-3 text-xs text-foreground/80">
                     <CheckCircle className="size-3 text-primary" />
                     {item}
                   </div>
                 ))}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/20 border-border/50">
-              <CardHeader className="py-3">
-                <CardTitle className="text-[10px] font-code uppercase tracking-widest text-muted-foreground">System telemetry</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center text-[10px] font-code">
-                  <span className="text-muted-foreground">AUDIT_NODE</span>
-                  <span className="text-primary">US-EAST-4</span>
-                </div>
-                <div className="flex justify-between items-center text-[10px] font-code">
-                  <span className="text-muted-foreground">QUEUE_LATENCY</span>
-                  <span className="text-foreground">0.4ms</span>
-                </div>
-                <div className="flex justify-between items-center text-[10px] font-code">
-                  <span className="text-muted-foreground">ENGINE_STABILITY</span>
-                  <span className="text-green-500">NOMINAL</span>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -218,14 +220,11 @@ export default function AuditPage() {
       <div className="bg-black/60 rounded-lg border border-border/50 p-6 font-code text-[11px] h-48 overflow-hidden relative">
         <div className="space-y-1">
           <p className="text-muted-foreground">[14:22:01] Ingestion started: {fileName}</p>
-          <p className="text-muted-foreground">[14:22:02] Geometric primitive count: 142,094</p>
-          <p className={cn("text-primary", activeStep >= 1 ? "opacity-100" : "opacity-0")}>[14:22:04] AIA Compliance Mapping initiated...</p>
-          <p className={cn("text-warning", activeStep >= 2 ? "opacity-100" : "opacity-0")}>[14:22:06] WARNING: Non-standard scale detected in Viewport 4</p>
-          <p className={cn("text-primary", activeStep >= 3 ? "opacity-100" : "opacity-0")}>[14:22:08] Annotation styles validated against ISO-13567</p>
-          <p className={cn("text-green-500", state === "complete" ? "opacity-100" : "opacity-0")}>[14:22:12] Report compilation successful. Finalizing telemetry...</p>
+          <p className="text-primary">[14:22:04] Drawing payload validation completed.</p>
+          <p className={cn("text-primary", activeStep >= 1 ? "opacity-100" : "opacity-0")}>[14:22:06] Audit category mapping initiated...</p>
+          <p className={cn("text-green-500", state === "complete" ? "opacity-100" : "opacity-0")}>[14:22:12] Report compilation successful.</p>
           <p className={cn("text-primary font-bold", state === "complete" ? "opacity-100" : "opacity-0")}>[14:22:13] ROUTING TO LIVE AUDIT RESULT...</p>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
       </div>
     </div>
   )
