@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Upload, FileType, Search, AlertCircle, AlertTriangle, Info, CheckCircle, FileText, Activity, ShieldCheck, Box, Microscope, Layers, Ruler, Database, Terminal } from "lucide-react"
 import { auditCadFile, type AuditCadFileOutput } from "@/ai/flows/audit-cad-file"
+import { persistAuditSession } from "@/lib/audit-session"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
@@ -56,12 +57,13 @@ export default function AuditPage() {
           fileName: file.name
         })
         setResults(output)
+        persistAuditSession(file.name, output)
         setProgress(100)
         setState("complete")
         
-        // Operational workflow: auto-route to Analysis Workstation after completion
+        // Operational workflow: auto-route to live audit results after completion
         setTimeout(() => {
-          router.push('/dashboard/analysis-dashboard')
+          router.push('/dashboard/audit-results')
         }, 1200)
 
       } catch (error) {
