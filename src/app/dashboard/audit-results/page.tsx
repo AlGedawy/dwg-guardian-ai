@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { readAuditSession, type StoredAuditSession } from "@/lib/audit-session"
+import { getAudit } from "@/lib/audits/repository"
+import type { StoredAuditSession } from "@/lib/audit-session"
 import { cn } from "@/lib/utils"
 
 function severityClass(severity: string) {
@@ -28,9 +29,14 @@ function readRequestedAuditId() {
 export default function AuditResultsPage() {
   const router = useRouter()
   const [session, setSession] = useState<StoredAuditSession | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setSession(readAuditSession(readRequestedAuditId()))
+    const load = async () => {
+      setSession(await getAudit(readRequestedAuditId()))
+      setIsLoading(false)
+    }
+    void load()
   }, [])
 
   const summary = useMemo(() => {
@@ -43,6 +49,8 @@ export default function AuditResultsPage() {
       low: issues.filter(issue => issue.severity === "Low" || issue.severity === "Informational").length,
     }
   }, [session])
+
+  if (isLoading) return <div className="p-8 text-sm text-muted-foreground">Loading audit result...</div>
 
   if (!session) {
     return (
@@ -88,7 +96,7 @@ export default function AuditResultsPage() {
           <Button variant="outline" onClick={() => router.push('/dashboard/upload-workspace')} className="gap-2">
             <RefreshCw className="size-4" /> New Scan
           </Button>
-          <Button onClick={() => router.push('/dashboard/qa-report-viewer')} className="gap-2">
+          <Button onClick={() => router.push(`/dashboard/qa-report-viewer?id=${encodeURIComponent(session.id)}`)} className="gap-2">
             <FileText className="size-4" /> Open Report Viewer
           </Button>
         </div>
@@ -119,19 +127,13 @@ export default function AuditResultsPage() {
             <TableBody>
               {session.issues.map((issue, index) => (
                 <TableRow key={`${issue.category}-${index}`}>
-                  <TableCell>
-                    <Badge className={cn("text-[9px] font-code", severityClass(issue.severity))}>{issue.severity.toUpperCase()}</Badge>
-                  </TableCell>
+                  <TableCell><Badge className={cn("text-[9px] font-code", severityClass(issue.severity))}>{issue.severity.toUpperCase()}</Badge></TableCell>
                   <TableCell className="font-code text-xs uppercase">{issue.category}</TableCell>
                   <TableCell className="text-sm text-foreground/90">{issue.description}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{issue.suggestedRemediation || "Manual review required"}</TableCell>
                 </TableRow>
               ))}
-              {session.issues.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12 text-sm text-muted-foreground">No issues were returned for this audit.</TableCell>
-                </TableRow>
-              )}
+              {session.issues.length === 0 && <TableRow><TableCell colSpan={4} className="text-center py-12 text-sm text-muted-foreground">No issues were returned for this audit.</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>
@@ -141,15 +143,5 @@ export default function AuditResultsPage() {
 }
 
 function SummaryCard({ label, value, icon: Icon, tone = "text-foreground" }: { label: string, value: number, icon: any, tone?: string }) {
-  return (
-    <Card className="bg-card/30 border-border/50">
-      <CardContent className="p-4 flex items-center justify-between">
-        <div>
-          <p className="text-[10px] font-code uppercase text-muted-foreground">{label}</p>
-          <p className={cn("text-2xl font-headline font-bold", tone)}>{value}</p>
-        </div>
-        <Icon className={cn("size-5", tone)} />
-      </CardContent>
-    </Card>
-  )
+  return <Card className="bg-card/30 border-border/50"><CardContent className="p-4 flex items-center justify-between"><div><p className="text-[10px] font-code uppercase text-muted-foreground">{label}</p><p className={cn("text-2xl font-headline font-bold", tone)}>{value}</p></div><Icon className={cn("size-5", tone)} /></CardContent></Card>
 }
