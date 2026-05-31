@@ -9,6 +9,7 @@ export type StoredAuditSession = {
   createdAt: string
   status: "Completed"
   issues: AuditCadFileOutput["issues"]
+  storagePath?: string
 }
 
 function createAuditId() {
@@ -48,6 +49,22 @@ export function persistAuditSession(fileName: string, output: AuditCadFileOutput
   window.localStorage.setItem(AUDIT_SESSION_KEY, JSON.stringify(session))
   window.localStorage.setItem(AUDIT_HISTORY_KEY, JSON.stringify(nextHistory))
   window.sessionStorage.setItem(AUDIT_SESSION_KEY, JSON.stringify(session))
+
+  return session
+}
+
+export function updateAuditSessionStoragePath(id: string, storagePath: string) {
+  if (typeof window === "undefined") return null
+
+  const history = listAuditSessions()
+  const updated = history.map(session => session.id === id ? { ...session, storagePath } : session)
+  const session = updated.find(item => item.id === id) ?? null
+
+  window.localStorage.setItem(AUDIT_HISTORY_KEY, JSON.stringify(updated))
+  if (session) {
+    window.localStorage.setItem(AUDIT_SESSION_KEY, JSON.stringify(session))
+    window.sessionStorage.setItem(AUDIT_SESSION_KEY, JSON.stringify(session))
+  }
 
   return session
 }
