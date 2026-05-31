@@ -1,17 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { onAuthStateChanged, signOut, type User } from "firebase/auth"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Activity, 
-  Cpu, 
-  Globe, 
-  SignalHigh, 
-  ChevronDown, 
-  Building2, 
-  Search, 
+import {
+  Activity,
+  Cpu,
+  Globe,
+  SignalHigh,
+  ChevronDown,
+  Building2,
+  Search,
   Bell,
   Command
 } from "lucide-react"
@@ -24,14 +26,48 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { getFirebaseAuth } from "@/lib/firebase/client"
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+const DEMO_MODE_KEY = "dwg-guardian:demo-mode"
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const [activeOrg, setActiveOrg] = useState("Global Infra Partners")
+  const [user, setUser] = useState<User | null>(null)
+  const [isDemo, setIsDemo] = useState(false)
+  const [isReady, setIsReady] = useState(false)
   const organizations = ["Global Infra Partners", "Metro Rail Authority", "City Dev Group"]
+
+  useEffect(() => {
+    const demoEnabled = window.localStorage.getItem(DEMO_MODE_KEY) === "true"
+    setIsDemo(demoEnabled)
+
+    const auth = getFirebaseAuth()
+    if (!auth) {
+      if (!demoEnabled) router.replace('/login')
+      setIsReady(true)
+      return
+    }
+
+    return onAuthStateChanged(auth, currentUser => {
+      setUser(currentUser)
+      if (!currentUser && !demoEnabled) router.replace('/login')
+      setIsReady(true)
+    })
+  }, [router])
+
+  const terminateSession = async () => {
+    window.localStorage.removeItem(DEMO_MODE_KEY)
+    const auth = getFirebaseAuth()
+    if (auth?.currentUser) await signOut(auth)
+    router.replace('/login')
+  }
+
+  if (!isReady) return <div className="min-h-screen bg-[#080808] p-8 text-sm text-muted-foreground">Validating workspace session...</div>
+  if (!user && !isDemo) return null
+
+  const profileName = isDemo ? "DEMO_USER" : (user?.email ?? "AUTH_USER")
+  const profileRole = isDemo ? "LOCAL_SANDBOX" : "AUTHENTICATED_WORKSPACE"
 
   return (
     <SidebarProvider>
@@ -41,8 +77,6 @@ export default function DashboardLayout({
           <div className="flex items-center gap-3">
             <SidebarTrigger />
             <div className="h-4 w-px bg-border/50 mx-2" />
-            
-            {/* Organization Switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 gap-2 px-2 hover:bg-white/5 font-headline font-bold uppercase text-xs">
@@ -67,20 +101,20 @@ export default function DashboardLayout({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          
+
           <div className="flex-1 flex items-center justify-between">
             <div className="flex items-center gap-6">
               <div className="hidden xl:flex flex-col">
-                <span className="text-[10px] font-code text-muted-foreground uppercase leading-none mb-1">Active Cluster</span>
+                <span className="text-[10px] font-code text-muted-foreground uppercase leading-none mb-1">Active Mode</span>
                 <span className="text-xs font-bold font-code uppercase tracking-tight flex items-center gap-2">
-                  <Globe className="size-3 text-primary" /> US-EAST-INFRA-04
+                  <Globe className="size-3 text-primary" /> {isDemo ? "LOCAL_DEMO" : "CLOUD_WORKSPACE"}
                 </span>
               </div>
               <div className="hidden xl:block h-8 w-px bg-border/30" />
               <div className="flex flex-col">
-                <span className="text-[10px] font-code text-muted-foreground uppercase leading-none mb-1">Node Latency</span>
+                <span className="text-[10px] font-code text-muted-foreground uppercase leading-none mb-1">Session Status</span>
                 <span className="text-xs font-bold font-code uppercase tracking-tight flex items-center gap-2 text-green-500">
-                  <SignalHigh className="size-3 animate-pulse" /> 14ms
+                  <SignalHigh className="size-3 animate-pulse" /> ACTIVE
                 </span>
               </div>
             </div>
@@ -88,56 +122,39 @@ export default function DashboardLayout({
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex items-center gap-2 bg-muted/20 border border-white/5 rounded px-2 h-8">
                 <Search className="size-3 text-muted-foreground" />
-                <span className="text-[10px] font-code text-muted-foreground uppercase">Search Audit DB...</span>
+                <span className="text-[10px] font-code text-muted-foreground uppercase">Search Audit Registry...</span>
               </div>
-              
-              <Button size="icon" variant="ghost" className="size-8 relative">
-                <Bell className="size-4" />
-                <span className="absolute top-1 right-1 size-1.5 bg-primary rounded-full" />
-              </Button>
-
+              <Button size="icon" variant="ghost" className="size-8 relative"><Bell className="size-4" /></Button>
               <div className="h-8 w-px bg-border/30" />
-              
               <div className="flex items-center gap-3">
                 <div className="text-right hidden md:block">
-                  <p className="text-[10px] font-bold uppercase leading-none">SYS_ADMIN_42</p>
-                  <p className="text-[8px] font-code text-muted-foreground uppercase mt-1">QA_LEAD // L4_AUTH</p>
+                  <p className="text-[10px] font-bold uppercase leading-none max-w-[220px] truncate">{profileName}</p>
+                  <p className="text-[8px] font-code text-muted-foreground uppercase mt-1">{profileRole}</p>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <div className="size-8 rounded bg-primary/20 border border-primary/20 flex items-center justify-center cursor-pointer hover:bg-primary/30 transition-colors">
-                      <span className="text-[10px] font-code font-bold">SA</span>
+                      <span className="text-[10px] font-code font-bold">{isDemo ? "DM" : "AU"}</span>
                     </div>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 bg-card border-border/50">
                     <DropdownMenuLabel className="text-[10px] font-code uppercase tracking-widest text-muted-foreground">Session Profile</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-xs font-code uppercase">Profile Settings</DropdownMenuItem>
-                    <DropdownMenuItem className="text-xs font-code uppercase">Security Tokens</DropdownMenuItem>
-                    <DropdownMenuItem className="text-xs font-code uppercase">Organization Admin</DropdownMenuItem>
+                    <DropdownMenuItem className="text-xs font-code uppercase">{profileRole}</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-xs font-code uppercase text-destructive" onClick={() => window.location.href = '/login'}>Terminate Session</DropdownMenuItem>
+                    <DropdownMenuItem className="text-xs font-code uppercase text-destructive" onClick={() => void terminateSession()}>Terminate Session</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </div>
           </div>
         </header>
-        
-        <div className="flex-1 overflow-auto bg-[#080808]">
-          {children}
-        </div>
+
+        <div className="flex-1 overflow-auto bg-[#080808]">{children}</div>
 
         <footer className="h-8 border-t bg-card/30 flex items-center px-6 justify-between text-[9px] font-code text-muted-foreground uppercase tracking-widest">
-          <div className="flex gap-4">
-            <span>© 2024 Guardian AI Systems</span>
-            <span>//</span>
-            <span>Security Protocol: AES-256-GCM</span>
-          </div>
-          <div className="flex gap-4">
-            <span className="flex items-center gap-1"><Activity className="size-2 text-primary" /> Engine: Nominal</span>
-            <span className="flex items-center gap-1"><Cpu className="size-2" /> Load: 12.4%</span>
-          </div>
+          <div className="flex gap-4"><span>© 2026 Guardian AI Systems</span><span>//</span><span>{isDemo ? "Demo Workspace" : "Authenticated Workspace"}</span></div>
+          <div className="flex gap-4"><span className="flex items-center gap-1"><Activity className="size-2 text-primary" /> Engine: Active</span><span className="flex items-center gap-1"><Cpu className="size-2" /> Mode: {isDemo ? "Local" : "Cloud"}</span></div>
         </footer>
       </SidebarInset>
     </SidebarProvider>
